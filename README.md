@@ -125,13 +125,39 @@ This library allows to upload a sketch to esp8266 or esp32 over Ethernet with Et
 
 *Note: Both esp8266 and esp32 Arduino core now support wired Ethernet as additional network interface for their WiFi library (STA and SoftAP are the 'built-in' network interfaces). With Ethernet over WiFi library you can use the standard OTA upload of the esp8266 and esp32 core with wired Ethernet.*
 
-To use this library instead of the bundled library, the bundled library must be removed from the boards package library folder. To override the configuration of OTA upload in platform.txt, copy the platform.local.txt file from extras folder of this library next to platform.txt file in boards package installation folder. For Arduino IDE 2 use platform.local.txt from extras/IDE2.
+To use this library instead of the bundled library (such as for W5500 or other Ethernet chips not yet natively supported by
+the esp8266 or esp32 network stack, the bundled library must be removed from the boards package library folder, or, this
+library must be renamed to ArduinoOTE. To override the configuration of OTA upload in platform.txt, copy the platform.local.txt file from extras folder of this library next to platform.txt file in boards package installation folder. For Arduino IDE 2 use platform.local.txt from extras/IDE2.
 
 This library supports SPIFFS upload to esp8266 and esp32, but the IDE plugins have the network upload tool hardcoded to espota. It can't be changed in configuration. To upload SPIFFS, call the plugin in Tools menu and after it fails to upload over network, go to location of the created bin file and upload the file with arduinoOTA tool from command line. The location of the file is printed in the IDE console window. Upload command example (linux):
 ```
 ~/arduino-1.8.8/hardware/tools/avr/bin/arduinoOTA -address 192.168.1.107 -port 65280 -username arduino -password password -sketch OTEthernet.spiffs.bin -upload /data -b
 ```
 (the same command can be used to upload the sketch binary, only use `-upload /sketch`)
+
+Since espota is a Python script, and the port number of 65280 (rather than the usual port numbers used by ESP) is detected by
+Arduino IDE and passed along to espota.py, it's possible to patch espota.py to invoke arduinoOTA when this port number
+is detected, and skip the ESP functionality, allowing for an in-IDE upload experience.  The patches are as follows:
+
+- add ```import subprocess``` to the block of imports (found after the initial comments in the file)
+- add the following code just before the line that calls serve() and returns its value:
+
+```
+  if str(options.esp_port)=='65280':
+    subprocess.run([ \
+     "/FILL/IN/A/PATH/TO/A/WORKING/BINARY/OF/arduinoOTA", \
+     "-address", options.esp_ip, \
+     "-port", "65280", \
+     "-username", "arduino", \
+     "-password", options.auth, \
+     "-sketch", options.image, \ 
+     "-upload", "/sketch", "-b"])
+    return
+```
+
+If the copy of arduinoOTA is not working or present in the tools for the avr architecture, try installing the Arduino SAMD
+boards and look for the tool there.
+
 
 ## nRF5 support
 
