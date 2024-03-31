@@ -123,21 +123,16 @@ The IDE upload tool is installed with Arduino AVR core package. At least version
 
 This library allows to upload a sketch to esp8266 or esp32 over Ethernet with Ethernet or EthernetENC library.
 
-*Note: Both esp8266 and esp32 Arduino core now support wired Ethernet as additional network interface for their WiFi library (STA and SoftAP are the 'built-in' network interfaces). With Ethernet over WiFi library you can use the standard OTA upload of the esp8266 and esp32 core with wired Ethernet.*
+*Note: Both esp8266 and esp32 Arduino cores natively support wired Ethernet as a substitute network interface for the Espressif WiFi TCP/IP stack for a limited selection of Ethernet chips (including LAN8720, IP101, DP83848, and RTL8201).  Where supported, you can use the native OTA functionality of the esp8266 and esp32 cores with wired Ethernet instead of this library.  The Wiznet W5xxx chips (including W5100, W5500) have their own on-chip TCP/IP stacks and are not yet integrated into the TCP/IP stack of the ESP8266 or ESP32 Arduino cores, and you should continue to use this library.*
 
-To use this library instead of the bundled library (such as for W5500 or other Ethernet chips not yet natively supported by
-the esp8266 or esp32 network stack, the bundled library must be removed from the boards package library folder, or, this
-library must be renamed to ArduinoOTE. To override the configuration of OTA upload in platform.txt, copy the platform.local.txt file from extras folder of this library next to platform.txt file in boards package installation folder. For Arduino IDE 2 use platform.local.txt from extras/IDE2.
+To use this library instead of the OTA library bundled with the esp8266/esp32 cores, this library has been renamed to ArduinoOTE to avoid naming conflicts.
 
-This library supports SPIFFS upload to esp8266 and esp32, but the IDE plugins have the network upload tool hardcoded to espota. It can't be changed in configuration. To upload SPIFFS, call the plugin in Tools menu and after it fails to upload over network, go to location of the created bin file and upload the file with arduinoOTA tool from command line. The location of the file is printed in the IDE console window. Upload command example (linux):
-```
-~/arduino-1.8.8/hardware/tools/avr/bin/arduinoOTA -address 192.168.1.107 -port 65280 -username arduino -password password -sketch OTEthernet.spiffs.bin -upload /data -b
-```
-(the same command can be used to upload the sketch binary, only use `-upload /sketch`)
+This library supports SPIFFS upload to esp8266 and esp32, but the IDE plugins have the network upload tool hardcoded to espota. It can't be changed in configuration.
+The espota tool can only upload to the esp8266/esp32 built-in OTA library, whereas this library uses the protocol of Arduino's arduinoOTA tool instead.
 
 Since espota is a Python script, and the port number of 65280 -- not normally used by espota -- is passed along to espota.py for
-boards where this library has been used to implement OTA, it's possible to patch espota.py to know when invoke the arduinoOTA tool based on
-the port number.  This skips the espota.py upload functionality, allowing for an in-IDE upload experience.  The patches are as follows:
+boards where this library has been used to implement OTA, it's possible to patch espota.py to invoke the arduinoOTA tool instead, based on
+the port number.  This skips the incompatible espota.py upload functionality, allowing for an in-IDE upload experience.  The patches are as follows:
 
 - add ```import subprocess``` to the block of imports (found after the initial comments in the file)
 - add the following code in ```main()``` just before the call to ```serve()``` (at the very end)
@@ -146,18 +141,20 @@ the port number.  This skips the espota.py upload functionality, allowing for an
   if str(options.esp_port)=='65280':
     subprocess.run([ \
      "/FILL/IN/A/PATH/TO/A/WORKING/BINARY/OF/arduinoOTA", \
-     "-address", options.esp_ip, \
+     "-address", options.esp_ip, \     # example 192.168.1.107
      "-port", "65280", \
      "-username", "arduino", \
-     "-password", options.auth, \
-     "-sketch", options.image, \ 
+     "-password", options.auth, \      # example mysecretpassword
+     "-sketch", options.image, \       # example /private/var/folders/70/j7nvl/T/arduino/sketches/9A34/sketch.ino.bin
      "-upload", "/sketch", "-b"])
     return
 ```
 
 If the copy of arduinoOTA is not working or present in the tools for the avr architecture, try installing the Arduino SAMD
-boards and look for the tool there.
+boards and look for the tool there.  The tool will be in a path loosely resembling ~/arduino-1.8.8/hardware/tools/avr/bin/arduinoOTA
 
+To upload SPIFFS data, one would need to call the arduinoOTA tool with the same arguments, except for providing (for example) OTEthernet.spiffs.bin as the
+image, and ```/data``` in place of ```/sketch```.
 
 ## nRF5 support
 
