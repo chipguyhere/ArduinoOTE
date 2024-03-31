@@ -137,8 +137,8 @@ ArduinoOTAMdnsClass  <EthernetServer, EthernetClient, EthernetUDP>   ArduinoOTA;
 #ifdef NO_OTA_PORT
 ArduinoOTAClass  <WiFiServer, WiFiClient> ArduinoOTA;
 #else
-#include <WiFiUdp.h>
-ArduinoOTAMdnsClass <WiFiServer, WiFiClient, WiFiUDP> ArduinoOTA;
+#include <EthernetUdp.h>
+ArduinoOTAMdnsClass <WiFiServer, WiFiClient, EthernetUDP> ArduinoOTA;
 #endif
 #endif
 
