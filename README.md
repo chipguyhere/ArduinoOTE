@@ -135,12 +135,12 @@ This library supports SPIFFS upload to esp8266 and esp32, but the IDE plugins ha
 ```
 (the same command can be used to upload the sketch binary, only use `-upload /sketch`)
 
-Since espota is a Python script, and the port number of 65280 (rather than the usual port numbers used by ESP) is detected by
-Arduino IDE and passed along to espota.py, it's possible to patch espota.py to invoke arduinoOTA when this port number
-is detected, and skip the ESP functionality, allowing for an in-IDE upload experience.  The patches are as follows:
+Since espota is a Python script, and the port number of 65280 -- not normally used by espota -- is passed along to espota.py for
+boards where this library has been used to implement OTA, it's possible to patch espota.py to know when invoke the arduinoOTA tool based on
+the port number.  This skips the espota.py upload functionality, allowing for an in-IDE upload experience.  The patches are as follows:
 
 - add ```import subprocess``` to the block of imports (found after the initial comments in the file)
-- add the following code just before the line that calls serve() and returns its value:
+- add the following code in ```main()``` just before the call to ```serve()``` (at the very end)
 
 ```
   if str(options.esp_port)=='65280':
